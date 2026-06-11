@@ -99,6 +99,7 @@ export async function getDashboardStats() {
             });
 
         const totalPRs = prs.total_count;
+        
 
         // TODO: Replace with database count after repository table is created
         // const totalRepos = await prisma.repository.count({
