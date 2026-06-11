@@ -90,7 +90,7 @@ export const LoginUI = () => {
             <button
               onClick={handleGithubLogin}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white disabled:opacity-75 disabled:cursor-not-allowed hover:bg-zinc-100 text-zinc-950 font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.99] shadow-lg shadow-black/10 group cursor-pointer text-sm"
+              className="w-full flex items-center justify-center gap-3 bg-white disabled:opacity-75 disabled:cursor-not-allowed hover:bg-zinc-100 text-zinc-950 font-semibold py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98] shadow-lg shadow-black/10 group cursor-pointer text-sm"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-zinc-950" />
@@ -105,7 +105,7 @@ export const LoginUI = () => {
           <div className="text-center pt-2 space-y-4">
             <p className="text-xs text-muted-foreground">
               New to CodeHorse?&nbsp;&nbsp;
-              <span className="text-indigo-400 font-medium hover:text-indigo-300 hover:underline transition-colors cursor-pointer">
+              <span className="text-indigo-400 font-medium hover:text-indigo-300 hover:underline transition-all duration-200 cursor-pointer active:scale-95 inline-block">
                 Sign Up
               </span>
             </p>
@@ -114,7 +114,7 @@ export const LoginUI = () => {
               <span className="flex-shrink mx-4 text-[10px] text-muted-foreground/40 uppercase tracking-widest font-bold">Or Alternate Options</span>
               <div className="flex-grow border-t border-border/30"></div>
             </div>
-            <p className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer inline-block text-center w-full underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-600">
+            <p className="text-xs text-zinc-400 hover:text-zinc-200 transition-all duration-200 cursor-pointer inline-block text-center w-full underline underline-offset-4 decoration-zinc-800 hover:decoration-zinc-600 active:scale-95">
               Self-Hosted Services
             </p>
           </div>
