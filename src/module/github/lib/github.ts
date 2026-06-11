@@ -3,68 +3,6 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { headers } from "next/headers";
 
-
-
-
-
-
-export async function getContributionStats() {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      throw new Error("Unauthorized");
-    }
-
-    const token = await getGithubToken();
-
-    // Get the actual GitHub username
-    const octokit = new Octokit({
-      auth: token,
-    });
-
-    const { data: user } =
-      await octokit.rest.users.getAuthenticated();
-
-    const username = user.login;
-
-    const calendar = await fetchUserContribution(
-      token,
-      username
-    );
-
-    if (!calendar) {
-      return null;
-    }
-
-    const contributions = calendar.weeks.flatMap(
-      (week: any) =>
-        week.contributionDays.map((day: any) => ({
-          date: day.date,
-          count: day.contributionCount,
-          level: Math.min(
-            4,
-            Math.floor(day.contributionCount / 3)
-          ),
-        }))
-    );
-
-    return {
-  contributions,
-  totalContributions: calendar.totalContributions 
-};
-   
-  } catch (error) {
-    console.error("Error fetching contributions:", error);
-    return null;
-  }
-}
-
-
-
-
 /**
  * Getting the github access token
  */
@@ -91,11 +29,9 @@ export const getGithubToken = async () => {
   return account.accessToken;
 };
 
-
-
 interface ContributionData {
   user: {
-    contributionCollection: {
+    contributionsCollection: {
       contributionCalendar: {
         totalContributions: number;
         weeks: {
@@ -107,28 +43,28 @@ interface ContributionData {
         }[];
       };
     };
-  };       
+  };
 }
 
 /**
  * Fetch github contribution graph data
  */
-export async function fetchUserContribution(   
+export async function fetchUserContribution(
   token: string,
   username: string
-) {      
+) {
   const octokit = new Octokit({
     auth: token,
   });
 
   const query = `
-    query($username:String!){
-      user(login:$username){
-        contributionCollection{
-          contributionCalendar{
+    query($username: String!) {
+      user(login: $username) {
+        contributionsCollection {
+          contributionCalendar {
             totalContributions
-            weeks{
-              contributionDays{
+            weeks {
+              contributionDays {
                 contributionCount
                 date
                 color
@@ -141,16 +77,24 @@ export async function fetchUserContribution(
   `;
 
   try {
-    const response: ContributionData = await octokit.graphql(query, {
-      username,
-    });
+    const response: ContributionData = await octokit.graphql(
+      query,
+      {
+        username,
+      }
+    );
 
-    return response.user.contributionCollection.contributionCalendar;
+    return response.user.contributionsCollection.contributionCalendar;
   } catch (error) {
-    console.error("Github contribution fetch error:", error);
-    throw new Error("Failed to fetch contribution data");
+    console.error(
+      "Github contribution fetch error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to fetch contribution data"
+    );
   }
 }
-
 
 

@@ -67,7 +67,7 @@ export default function DashboardLayout({
             
             <Breadcrumb>
               <BreadcrumbList>
-                {breadcrumbs.map((bc, index) => (
+                {breadcrumbs.map((bc) => (
                   <React.Fragment key={bc.url}>
                     <BreadcrumbItem>
                       {bc.isLast ? (

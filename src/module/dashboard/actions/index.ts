@@ -6,6 +6,60 @@ import { headers } from "next/headers";
 import { Octokit } from "octokit";
 // import prisma from "@/lib/db";
 
+export async function getContributionStats() {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session?.user) {
+      throw new Error("Unauthorized");
+    }
+
+    const token = await getGithubToken();
+
+    // Get the actual GitHub username
+    const octokit = new Octokit({
+      auth: token,
+    });
+
+    const { data: user } =
+      await octokit.rest.users.getAuthenticated();
+
+    const username = user.login;
+
+    const calendar = await fetchUserContribution(
+      token,
+      username
+    );
+
+    if (!calendar) {
+      return null;
+    }
+
+    const contributions = calendar.weeks.flatMap(
+      (week: { contributionDays: { date: string; contributionCount: number }[] }) =>
+        week.contributionDays.map((day: { date: string; contributionCount: number }) => ({
+          date: day.date,
+          count: day.contributionCount,
+          level: Math.min(
+            4,
+            Math.floor(day.contributionCount / 3)
+          ),
+        }))
+    );
+
+    return {
+      contributions,
+      totalContributions: calendar.totalContributions
+    };
+
+  } catch (error) {
+    console.error("Error fetching contributions:", error);
+    return null;
+  }
+}
+
 export async function getDashboardStats() {
     try {
         const session = await auth.api.getSession({
@@ -27,6 +81,8 @@ export async function getDashboardStats() {
             await octokit.rest.users.getAuthenticated();
 
         // Get github contribution calendar
+ 
+ 
         const calendar = await fetchUserContribution(
             token,
             user.login
@@ -153,8 +209,8 @@ export async function getMonthlyActivity() {
     }
 
     // commit/contribution count
-    calendar.weeks.forEach((week: any) => {
-      week.contributionDays.forEach((day: any) => {
+    calendar.weeks.forEach((week: { contributionDays: { date: string; contributionCount: number }[] }) => {
+      week.contributionDays.forEach((day: { date: string; contributionCount: number }) => {
         const date = new Date(day.date);
 
         const monthKey =
@@ -182,7 +238,7 @@ export async function getMonthlyActivity() {
         per_page: 100,
       });
 
-    prs.items.forEach((pr: any) => {
+    prs.items.forEach((pr: { created_at: string }) => {
       const date = new Date(pr.created_at);
 
       const monthKey =
