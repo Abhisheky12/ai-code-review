@@ -157,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
-              className="h-11 rounded-lg text-zinc-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 active:scale-[0.98]"
+              className="h-11 rounded-lg text-zinc-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
             >
               <LogOut className="h-4 w-4" />
               <span className="font-medium">Sign Out</span>
