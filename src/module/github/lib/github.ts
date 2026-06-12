@@ -96,5 +96,54 @@ export async function fetchUserContribution(
     );
   }
 }
+//code by me 
+// export const getRepositories = async (
+//   page: number = 1,
+//   perPage: number = 10
+// ) => {
+//   const token = await getGithubToken();
+
+//   const octokit = new Octokit({
+//     auth: token,
+//   });
+
+//   const { data } =
+//     await octokit.rest.repos.listForAuthenticatedUser({
+//       sort: "updated",
+//       direction: "desc",
+//       visibility: "all",
+//       per_page: perPage,
+//       page: page,
+//     });
+
+//   return data;
+// };
 
 
+
+export const getRepositories = async () => {
+  // Fetch valid github session key token
+  const token = await getGithubToken();
+
+  // Initialize unified octokit client engine
+  const octokit = new Octokit({
+    auth: token,
+  });
+
+  // Pull active user metadata securely
+  const { data: user } = await octokit.rest.users.getAuthenticated();
+
+  // Apply fallback 0 to fix optional undefined addition types mismatch
+  const totalRepos = (user.public_repos || 0) + (user.total_private_repos || 0);
+
+  // Fetch paginated active repository details matrix data rows
+  const { data } = await octokit.rest.repos.listForAuthenticatedUser({
+    sort: "updated",
+    direction: "desc",
+    visibility: "all",
+    per_page: Math.min(totalRepos, 100), // Enforce upper limit ceiling bounds
+    page: 1,
+  });
+
+  return data; // Return clear collection matrix rows
+};
