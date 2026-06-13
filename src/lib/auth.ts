@@ -7,6 +7,11 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://outburst-grouped-dimple.ngrok-free.dev",
+  ],
+
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,

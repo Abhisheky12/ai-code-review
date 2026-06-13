@@ -36,20 +36,43 @@ import {
 } from "recharts";
 
 const MainPage = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: async () => await getDashboardStats(),
-    refetchOnWindowFocus: false,
-  });
+  // const { data: stats, isLoading } = useQuery({
+  //   queryKey: ["dashboard-stats"],
+  //   queryFn: async () => await getDashboardStats(),
+  //   refetchOnWindowFocus: false,
+  // });
 
-  const {
-    data: monthlyActivity,
-    isLoading: isLoadingActivity,
-  } = useQuery({
-    queryKey: ["monthly-activity"],
-    queryFn: async () => await getMonthlyActivity(),
-    refetchOnWindowFocus: false,
-  });
+  // const {
+  //   data: monthlyActivity,
+  //   isLoading: isLoadingActivity,
+  // } = useQuery({
+  //   queryKey: ["monthly-activity"],
+  //   queryFn: async () => await getMonthlyActivity(),
+  //   refetchOnWindowFocus: false,
+  // });
+
+
+const { data: stats, isLoading } = useQuery({
+  queryKey: ["dashboard-stats"],
+  queryFn: async () => await getDashboardStats(),
+  staleTime: 1000 * 60 * 5, // 5 min cache
+  gcTime: 1000 * 60 * 10,
+  refetchOnWindowFocus: false,
+  retry: 1,
+});
+
+const {
+  data: monthlyActivity,
+  isLoading: isLoadingActivity,
+} = useQuery({
+  queryKey: ["monthly-activity"],
+  queryFn: async () => await getMonthlyActivity(),
+  staleTime: 1000 * 60 * 5,
+  gcTime: 1000 * 60 * 10,
+  refetchOnWindowFocus: false,
+  retry: 1,
+});
+
 
   const statCards = [
     {
