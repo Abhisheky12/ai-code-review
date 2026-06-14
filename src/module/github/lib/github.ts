@@ -248,3 +248,257 @@ export const deleteWebhook =
       return false;
     }
   };
+
+
+
+// export async function getRepoFileContents(
+//   token: string,
+//   owner: string,
+//   repo: string,
+//   path: string = ""
+// ): Promise<
+//   {
+//     path: string;
+//     content: string;
+//   }[]
+// > {
+//   console.log(`📂 Entering folder: ${path || "root"}`);
+
+//   const octokit = new Octokit({
+//     auth: token,
+//   });
+
+//   const { data } =
+//     await octokit.rest.repos.getContent({
+//       owner,
+//       repo,
+//       path,
+//     });
+
+//   if (!Array.isArray(data)) {
+//     if (
+//       data.type === "file" &&
+//       data.content
+//     ) {
+//       console.log(`📄 Single file: ${data.path}`);
+
+//       return [
+//         {
+//           path: data.path,
+//           content: Buffer.from(
+//             data.content,
+//             "base64"
+//           ).toString("utf-8"),
+//         },
+//       ];
+//     }
+
+//     return [];
+//   }
+
+//   let files: {
+//     path: string;
+//     content: string;
+//   }[] = [];
+
+//   for (const item of data) {
+//     console.log(
+//       `🔍 Processing: ${item.path} (${item.type})`
+//     );
+
+//     if (item.type === "file") {
+//       try {
+//         console.log(
+//           `📥 Fetching file content: ${item.path}`
+//         );
+
+//         const { data: fileData } =
+//           await octokit.rest.repos.getContent({
+//             owner,
+//             repo,
+//             path: item.path,
+//           });
+
+//         if (
+//           !Array.isArray(fileData) &&
+//           fileData.type === "file" &&
+//           fileData.content
+//         ) {
+//           if (
+//             !item.path.match(
+//               /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz)$/i
+//             )
+//           ) {
+//             files.push({
+//               path: item.path,
+//               content: Buffer.from(
+//                 fileData.content,
+//                 "base64"
+//               ).toString("utf-8"),
+//             });
+
+//             console.log(
+//               `✅ Added: ${item.path}`
+//             );
+//           }
+//         }
+//       } catch (error) {
+//         console.error(
+//           `❌ Failed file: ${item.path}`,
+//           error
+//         );
+//       }
+//     } else if (item.type === "dir") {
+//       console.log(
+//         `📁 Entering subfolder: ${item.path}`
+//       );
+
+//       const subFiles =
+//         await getRepoFileContents(
+//           token,
+//           owner,
+//           repo,
+//           item.path
+//         );
+
+//       files = files.concat(
+//         subFiles
+//       );
+//     }
+//   }
+
+//   console.log(
+//     `🎉 Finished ${path || "root"} | Files collected: ${files.length}`
+//   );
+
+//   return files;
+// }
+
+
+export async function getRepoFileContents(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string = ""
+): Promise<
+  {
+    path: string;
+    content: string;
+  }[]
+> {
+  const octokit = new Octokit({
+    auth: token,
+  });
+
+  const { data } =
+    await octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path,
+    });
+
+  if (!Array.isArray(data)) {
+    if (
+      data.type === "file" &&
+      data.content
+    ) {
+      return [
+        {
+          path: data.path,
+          content: Buffer.from(
+            data.content,
+            "base64"
+          ).toString("utf-8"),
+        },
+      ];
+    }
+
+    return [];
+  }
+
+  let files: {
+    path: string;
+    content: string;
+  }[] = [];
+
+  const ignoredDirs = [
+    "node_modules",
+    ".git",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
+    ".turbo",
+    ".vercel",
+  ];
+
+  for (const item of data) {
+    // Skip useless directories
+    if (
+      ignoredDirs.some((dir) =>
+        item.path.includes(dir)
+      )
+    ) {
+      console.log(`⏭️ Skipped directory: ${item.path}`);
+      continue;
+    }
+
+    if (item.type === "file") {
+      try {
+        // Skip non-code files
+        if (
+          item.path.match(
+            /\.(png|jpg|jpeg|gif|svg|ico|pdf|zip|tar|gz|mp4|mp3|woff|woff2|ttf|eot|map|lock)$/i
+          )
+        ) {
+          continue;
+        }
+
+        const { data: fileData } =
+          await octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: item.path,
+          });
+
+        if (
+          !Array.isArray(fileData) &&
+          fileData.type === "file" &&
+          fileData.content
+        ) {
+          files.push({
+            path: item.path,
+            content: Buffer.from(
+              fileData.content,
+              "base64"
+            ).toString("utf-8"),
+          });
+        }
+      } catch (error) {
+        console.error(
+          `❌ Failed file: ${item.path}`,
+          error
+        );
+      }
+    } else if (item.type === "dir") {
+      const subFiles =
+        await getRepoFileContents(
+          token,
+          owner,
+          repo,
+          item.path
+        );
+
+      files = files.concat(subFiles);
+    }
+  }
+
+  return files;
+}
+
+
+
+
+
+
+

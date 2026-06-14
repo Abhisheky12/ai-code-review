@@ -5,5 +5,5 @@ export const pinecone = new Pinecone({
 });
 
 export const pineconeIndex = pinecone.index(
-  "aicodereview"
+  "reviewcode"
 );

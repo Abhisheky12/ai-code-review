@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 import { createWebhook, getRepositories } from "@/module/github/lib/github";
+import { inngest } from "@/inngest/client";
 
 export const fetchRepositories = async (
   // page: number = 1,
@@ -82,5 +83,24 @@ export const connectRepository = async (
 
   // TODO: TRIGGER REPOSITORY INDEXING FOR RAG (FIRE AND FORGET)
 
+  try {
+  await inngest.send({
+    name: "repository.connected",
+    data: {
+      owner,
+      repo,
+      userId: session.user.id,
+    },   
+  });
+} catch (error) {
+  console.error(
+    "Failed to trigger repository indexing:",
+    error
+  );
+}
+
+
   return webhook;
 };
+
+

@@ -1,0 +1,99 @@
+import { pineconeIndex } from "@/lib/pinecone";
+// import { embed } from "ai";
+// import { google } from "@ai-sdk/google";
+
+import { GoogleGenAI } from "@google/genai";
+
+const genAI = new GoogleGenAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
+});
+
+export async function generateEmbedding(text: string) {
+    const response =
+        await genAI.models.embedContent({
+            model: "gemini-embedding-001",
+            contents: text,
+            config: {
+                outputDimensionality: 768,
+            },
+        });
+
+    const embedding =
+        response.embeddings?.[0]?.values;
+
+    if (!embedding) {
+        throw new Error(
+            "Failed to generate embedding"
+        );
+    }
+
+    return embedding;
+}
+
+export async function indexCodebase(
+    repoId: string,
+    files: { path: string; content: string }[]
+) {
+    const vectors = [];
+
+    for (const file of files) {
+        const content = `File: ${file.path}\n\n${file.content}`;
+
+        const truncatedContent = content.slice(0, 8000);
+
+        try {
+            const embedding = await generateEmbedding(truncatedContent);
+
+            vectors.push({
+                id: `${repoId}-${file.path.replace(/\//g, "-")}`,
+                values: embedding,
+                metadata: {
+                    repoId,
+                    path: file.path,
+                    content: truncatedContent,
+                },
+            });
+        } catch (e) {
+            console.error(`Failed to embed ${file.path}:`, e);
+        }
+    }
+
+    if (vectors.length > 0) {
+        const batchSize = 100;
+
+        for (let i = 0; i < vectors.length; i += batchSize) {
+            const batch = vectors.slice(i, i + batchSize);
+
+            //   await pineconeIndex.upsert(batch);
+            await pineconeIndex.upsert({
+                records: batch,
+            });
+        }
+    }
+
+    console.log("indexing complete");
+}
+
+
+
+export async function retrieveContext(
+    query: string,
+    repoId: string,
+    topK: number = 5
+) {
+    const embedding = await generateEmbedding(query);
+
+    const results = await pineconeIndex.query({
+        vector: embedding,
+        filter: { repoId },
+        topK,
+        includeMetadata: true,
+    });
+
+    return results.matches
+        .map((match) => match.metadata?.content as string)
+        .filter(Boolean);
+}
+
+
+
