@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 
 import { createWebhook, getRepositories } from "@/module/github/lib/github";
 import { inngest } from "@/inngest/client";
+import { canConnectRepository, incrementRepositoryCount } from "@/module/payment/lib/subscription";
 
 export const fetchRepositories = async (
   // page: number = 1,
@@ -57,6 +58,14 @@ export const connectRepository = async (
 
   // TODO: CHECK IF USER CAN CONNECT MORE REPO
 
+  const canConnect = await canConnectRepository(session.user.id);
+
+  if (!canConnect) {
+    throw new Error(
+      "Repository limit reached. Please upgrade to Pro for unlimited repositories."
+    );
+  }
+
   const webhook =
     await createWebhook(
       owner,
@@ -77,29 +86,29 @@ export const connectRepository = async (
           session.user.id,
       },
     });
-  }
+  
 
   // TODO: INCREMENT REPOSITORY COUNT FOR USAGE TRACKING
-
+   await incrementRepositoryCount(session.user.id);
   // TODO: TRIGGER REPOSITORY INDEXING FOR RAG (FIRE AND FORGET)
 
   try {
-  await inngest.send({
-    name: "repository.connected",
-    data: {
-      owner,
-      repo,
-      userId: session.user.id,
-    },   
-  });
-} catch (error) {
-  console.error(
-    "Failed to trigger repository indexing:",
-    error
-  );
-}
+    await inngest.send({
+      name: "repository.connected",
+      data: {
+        owner,
+        repo,
+        userId: session.user.id,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Failed to trigger repository indexing:",
+      error
+    );
+  }
 
-
+  }
   return webhook;
 };
 

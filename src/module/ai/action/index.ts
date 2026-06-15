@@ -3,6 +3,7 @@
 import Prisma from "@/lib/db";
 import { getPullRequestDiff } from "@/module/github/lib/github";
 import { inngest } from "@/inngest/client";
+import { canCreateReview, incrementReviewCount } from "@/module/payment/lib/subscription";
 
 export async function reviewPullRequest(
   owner: string,
@@ -34,6 +35,14 @@ export async function reviewPullRequest(
         `Repository ${owner}/${repo} not found in database. Please reconnect the repository.`
       );
     }
+
+    const canReview=await canCreateReview(repository.user.id,repository.id);
+
+    if(!canReview){
+         throw new Error("Review limit reached for this repository.Please upgrade to Pro fro unlimited reviews.");
+
+    }
+
 
     const githubAccount =
       repository.user.accounts[0];
@@ -67,6 +76,8 @@ export async function reviewPullRequest(
           repository.user.id,
       },
     });
+
+    await incrementReviewCount(repository.user.id,repository.id);
 
     return {
       success: true,
@@ -110,3 +121,5 @@ export async function reviewPullRequest(
     throw error;
   }
 }
+
+
