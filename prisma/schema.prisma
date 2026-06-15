@@ -32,11 +32,11 @@ model User {
 model Repository {
   id        String   @id @default(cuid())
   githubId  BigInt   @unique
-
+  reviews   Review[]
   name      String
   owner     String
   fullName  String
-  url       String
+  url       String     
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -47,6 +47,28 @@ model Repository {
   @@index([userId])
   @@map("repository")
 }
+
+
+model Review {
+  id           String      @id @default(cuid())
+  repositoryId String
+  repository   Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  prNumber     Int
+  prTitle      String
+  prUrl        String
+
+  review       String      @db.Text
+
+  status       String      @default("completed") // completed, failed, pending
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([repositoryId])
+  @@map("review")
+}     
+
 
 model Session {
   id        String   @id

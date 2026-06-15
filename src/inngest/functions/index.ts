@@ -16,7 +16,7 @@ export const indexRepo = inngest.createFunction(
   async ({ event, step }) => {
     const { owner, repo, userId } = event.data;
 
-    //files          
+    //files                
     const files = await step.run(
       "fetch-files",
       async () => {

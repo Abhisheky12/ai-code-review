@@ -1,3 +1,4 @@
+import { reviewPullRequest } from "@/module/ai/action";
 import {
     NextRequest,
     NextResponse,
@@ -31,6 +32,36 @@ export async function POST(
             );
         }
 
+        if (event === "pull_request") {
+            const action = body.action;
+            const repo = body.repository.full_name;
+            const prNumber = body.number;
+
+            const [owner, repoName] = repo.split("/");
+
+            if (
+                action === "opened" ||
+                action === "synchronize"
+            ) {
+                reviewPullRequest(
+                    owner,
+                    repoName,
+                    prNumber
+                )
+                    .then(() =>
+                        console.log(
+                            `Review completed for ${repo} #${prNumber}`
+                        )
+                    )
+                    .catch((error) =>
+                        console.log(
+                            `Review failed for ${repo} #${prNumber}`,
+                            error
+                        )
+                    );
+            }
+        }
+
         // TODO: HANDLE LATER
 
         return NextResponse.json(
@@ -48,7 +79,7 @@ export async function POST(
             error
         );
 
-        return NextResponse.json(
+        return NextResponse.json( 
             {
                 error:
                     "Internal Server Error",
