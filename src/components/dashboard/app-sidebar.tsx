@@ -83,7 +83,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Command className="h-5 w-5" />
           </div>
           {state !== "collapsed" && (
-            <span className="font-bold text-lg tracking-tight text-white">CodeRabbit</span>
+            <span className="font-bold text-lg tracking-tight text-white">CodeOrbit</span>
           )}
         </div>
       </SidebarHeader>

@@ -2,12 +2,17 @@ import { inngest } from "../client";
 import {
   getPullRequestDiff,
   postReviewComment,
-//   postReviewComment,
+  //   postReviewComment,
 } from "@/module/github/lib/github";
 import { retrieveContext } from "@/module/ai/lib/rag";
-import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import prisma from "@/lib/db";
+import { generateText } from "ai";
+import { createGroq } from "@ai-sdk/groq";
+
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export const generateReview =
   inngest.createFunction(
@@ -87,10 +92,9 @@ export const generateReview =
             const prompt = `You are an expert code reviewer. Analyze the following pull request and provide a detailed, constructive code review.
 
 PR Title: ${title}
-PR Description: ${
-              description ||
+PR Description: ${description ||
               "No description provided"
-            }
+              }
 
 Context from Codebase:
 ${context.join("\n\n")}
@@ -107,14 +111,14 @@ Please provide:
 4. **Strengths**: What's done well.
 5. **Issues**: Bugs, security concerns, code smells.
 6. **Suggestions**: Specific code improvements.
-7. **Poem**: A short, creative poem summarizing the changes at the very end.
+
 
 Format your response in markdown.`;
 
             const { text } =
               await generateText({
-                model: google(
-                  "gemini-2.5-flash"
+                model: groq(
+                  "llama-3.3-70b-versatile"
                 ),
                 prompt,
               });
@@ -134,7 +138,7 @@ Format your response in markdown.`;
             review
           );
         }
-      );        
+      );
 
       await step.run(
         "save-review",
