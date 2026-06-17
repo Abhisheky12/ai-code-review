@@ -8,7 +8,7 @@ const Page = async() => {
     <>
       <LoginUI/>
     </>
-  );
+  );        
 };
 
 export default Page;
