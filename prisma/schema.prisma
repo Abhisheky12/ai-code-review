@@ -33,7 +33,11 @@ model User {
 subscriptionStatus   String?
 // ACTIVE , CANCELLED , EXPIRED
 
+polarCustomerId String? @unique
+polarSubscriptionId String? @unique
+
   @@map("user")
+  
 }
 
 model Repository {

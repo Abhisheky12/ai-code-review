@@ -1,18 +1,597 @@
+
+"use client";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+import {
+  Check,
+  X,
+  Loader2,
+  ExternalLink,
+  RefreshCw,
+} from "lucide-react";
+
+import {
+  checkout,
+  customer,
+} from "@/lib/auth-client";
+
+import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+
+import {
+  useQuery,
+} from "@tanstack/react-query";
+
+import {
+  useState,
+  useEffect,
+} from "react";
+
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+import { getSubscriptionData, syncSubscriptionStatus } from "@/module/payment/action";
+
+const PLAN_FEATURES = {
+  free: [
+    {
+      name: "Up to 5 repositories",
+      included: true,
+    },
+    {
+      name: "Up to 5 reviews per repository",
+      included: true,
+    },
+    {
+      name: "Basic code reviews",
+      included: true,
+    },
+    {
+      name: "Community support",
+      included: true,
+    },
+    {
+      name: "Advanced analytics",
+      included: false,
+    },
+    {
+      name: "Priority support",
+      included: false,
+    },
+  ],
+
+  pro: [
+    {
+      name: "Unlimited repositories",
+      included: true,
+    },
+    {
+      name: "Unlimited reviews",
+      included: true,
+    },
+    {
+      name: "Advanced code reviews",
+      included: true,
+    },
+    {
+      name: "Email support",
+      included: true,
+    },
+    {
+      name: "Advanced analytics",
+      included: true,
+    },
+    {
+      name: "Priority support",
+      included: true,
+    },
+  ],
+};
+
+
 export default function SubscriptionPage() {
+  const [checkoutLoading, setCheckoutLoading] =
+    useState(false);
+
+  const [portalLoading, setPortalLoading] =
+    useState(false);
+
+  const [syncLoading, setSyncLoading] =
+    useState(false);
+
+  const searchParams =
+    useSearchParams();
+
+  const success =
+    searchParams.get("success");
+
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      "subscription-data",
+    ],
+    queryFn:
+      getSubscriptionData,
+    refetchOnWindowFocus:
+      true,
+  });
+
+  const currentTier =
+    data?.user
+      ?.subscriptionTier as
+    | "FREE"
+    | "PRO";
+
+  const isPro =
+    currentTier === "PRO";
+
+  const isActive =
+    data?.user
+      ?.subscriptionStatus ===
+    "ACTIVE";
+
+  const handleSync = async () => {
+    try {
+      setSyncLoading(true);
+
+      const result =
+        await syncSubscriptionStatus();
+
+      if (result.success) {
+        toast.success(
+          "Subscription status updated"
+        );
+
+        refetch();
+      } else {
+        toast.error(
+          "Failed to sync subscription"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Failed to sync subscription:",
+        error
+      );
+
+      toast.error(
+        "Failed to sync subscription"
+      );
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      setCheckoutLoading(true);
+
+      await checkout({
+        slug: "Codereview",
+      });
+    } catch (error) {
+      console.error(
+        "Failed to initiate checkout:",
+        error
+      );
+
+      toast.error(
+        "Failed to open checkout"
+      );
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageSubscription =
+    async () => {
+      try {
+        setPortalLoading(true);
+
+        await customer.portal();
+      } catch (error) {
+        console.error(
+          "Failed to open portal:",
+          error
+        );
+
+        toast.error(
+          "Failed to open customer portal"
+        );
+      } finally {
+        setPortalLoading(false);
+      }
+    };
+
+
+    useEffect(() => {
+  if (success === "true") {
+    const sync = async () => {
+      try {
+        await syncSubscriptionStatus();
+
+        refetch();
+      } catch (e) {
+        console.error(
+          "Failed to sync subscription on success return",
+          e
+        );
+      }
+    };          
+
+    sync();
+  }
+}, [success, refetch]);
+
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6 p-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Subscription Plans
+          </h1>
+
+          <p className="text-muted-foreground">
+            Failed to load subscription data
+          </p>
+        </div>
+
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+
+          <AlertDescription>
+            Failed to load subscription data.
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-4"
+              onClick={() => refetch()}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!data?.user) {
+    return (
+      <div className="space-y-6 p-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Subscription Plans
+          </h1>
+
+          <p className="text-muted-foreground">
+            Please sign in to view subscription options
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8">
-      <h2 className="text-3xl font-bold tracking-tight">Subscription</h2>
-      <p className="text-muted-foreground mt-1">Manage your billing and plan.</p>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {["Free", "Pro", "Enterprise"].map((plan) => (
-          <div key={plan} className="rounded-2xl border border-border p-6 bg-zinc-900/20">
-            <h3 className="text-xl font-bold">{plan}</h3>
-            <p className="text-muted-foreground text-sm mt-2">Plan details and features...</p>
-            <button className="mt-4 w-full rounded-lg bg-zinc-800 py-2 text-sm font-medium hover:bg-zinc-700 transition-colors">
-              {plan === "Pro" ? "Current Plan" : "Upgrade"}
-            </button>
-          </div>
-        ))}
+    <div className="space-y-6 p-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Subscription Plans
+          </h1>
+
+          <p className="text-muted-foreground">
+            Choose the perfect plan for your needs
+          </p>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSync}
+          disabled={syncLoading}
+        >
+          {syncLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-2 h-4 w-4" />
+          )}
+
+          Sync Status
+        </Button>
+      </div>
+
+      {success === "true" && (
+        <Alert className="border-green-500 bg-green-500/10">
+          <Check className="h-4 w-4 text-green-500" />
+
+          <AlertTitle>
+            Subscription Updated
+          </AlertTitle>
+
+          <AlertDescription>
+            Your subscription has been updated successfully.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {data.limits && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Current Usage
+            </CardTitle>
+
+            <CardDescription>
+              Your current plan limits and usage
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Repositories
+                </span>
+
+                <Badge variant="secondary">
+                  {
+                    data.limits.repositories
+                      .current
+                  }
+                  /
+                  {data.limits.repositories
+                    .limit ?? "∞"}
+                </Badge>
+              </div>
+
+              <div className="h-2 w-full rounded-full bg-muted">
+                <div
+                  className="h-2 rounded-full bg-primary"
+                  style={{
+                    width:
+                      data.limits.repositories
+                        .limit
+                        ? `${Math.min(
+                          (data.limits
+                            .repositories
+                            .current /
+                            data.limits
+                              .repositories
+                              .limit) *
+                          100,
+                          100
+                        )}%`
+                        : "100%",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Reviews
+                </span>
+
+                <Badge variant="outline">
+                  {isPro
+                    ? "Unlimited"
+                    : "5 per repository"}
+                </Badge>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {isPro
+                  ? "Unlimited AI reviews on all repositories."
+                  : "Free plan includes 5 reviews per repository."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* FREE PLAN */}
+        <Card
+          className={
+            !isPro
+              ? "border-primary ring-2 ring-primary"
+              : ""
+          }
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>
+                  Free
+                </CardTitle>
+
+                <CardDescription>
+                  Perfect for getting started
+                </CardDescription>
+              </div>
+
+              {!isPro && (
+                <Badge>
+                  Current Plan
+                </Badge>
+              )}
+            </div>
+
+            <div className="pt-4">
+              <span className="text-4xl font-bold">
+                $0
+              </span>
+
+              <span className="text-muted-foreground">
+                /month
+              </span>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {PLAN_FEATURES.free.map(
+              (feature) => (
+                <div
+                  key={feature.name}
+                  className="flex items-center gap-3"
+                >
+                  {feature.included ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  )}
+
+                  <span
+                    className={
+                      feature.included
+                        ? ""
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {feature.name}
+                  </span>
+                </div>
+              )
+            )}
+
+            <Button
+              className="w-full"
+              variant="outline"
+              disabled
+            >
+              {isPro
+                ? "Current Free Plan"
+                : "Current Plan"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* PRO PLAN */}
+        <Card
+          className={
+            isPro
+              ? "border-primary ring-2 ring-primary"
+              : ""
+          }
+        >
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>
+                  Pro
+                </CardTitle>
+
+                <CardDescription>
+                  For professional developers
+                </CardDescription>
+              </div>
+
+              {isPro && (
+                <Badge>
+                  Current Plan
+                </Badge>
+              )}
+            </div>
+
+            <div className="pt-4">
+              <span className="text-4xl font-bold">
+                $9.99
+              </span>
+
+              <span className="text-muted-foreground">
+                /month
+              </span>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {PLAN_FEATURES.pro.map(
+              (feature) => (
+                <div
+                  key={feature.name}
+                  className="flex items-center gap-3"
+                >
+                  <Check className="h-4 w-4 text-green-500" />
+
+                  <span>
+                    {feature.name}
+                  </span>
+                </div>
+              )
+            )}
+
+            {isPro && isActive ? (
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={
+                  handleManageSubscription
+                }
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening Portal...
+                  </>
+                ) : (
+                  <>
+                    Manage Subscription
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                onClick={handleUpgrade}
+                disabled={
+                  checkoutLoading
+                }
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading Checkout...
+                  </>
+                ) : (
+                  "Upgrade to Pro"
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
