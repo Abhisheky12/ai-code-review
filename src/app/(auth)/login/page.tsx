@@ -16,7 +16,6 @@
 
 import LoginUI from "@/module/auth/components/login-ui";
 
-export const dynamic = "force-dynamic";
 
 export default function Page() {
   return <LoginUI />;
