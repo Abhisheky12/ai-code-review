@@ -1,5 +1,5 @@
 import React from 'react';
-
+export const dynamic = "force-dynamic";
 import LoginUI from '@/module/auth/components/login-ui'; 
 import { requireUnAuth } from '@/module/auth/utils/auth-utils';
 
