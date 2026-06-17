@@ -81,8 +81,8 @@
 //             await octokit.rest.users.getAuthenticated();
 
 //         // Get github contribution calendar
- 
- 
+
+
 //         const calendar = await fetchUserContribution(
 //             token,
 //             user.login
@@ -99,7 +99,7 @@
 //             });
 
 //         const totalPRs = prs.total_count;
-        
+
 
 //         // TODO: Replace with database count after repository table is created
 //         // const totalRepos = await prisma.repository.count({
@@ -311,7 +311,7 @@ import {
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Octokit } from "octokit";
-// import prisma from "@/lib/db";
+import prisma from "@/lib/db";
 
 export async function getContributionStats() {
   try {
@@ -342,6 +342,7 @@ export async function getContributionStats() {
       token,
       username
     );
+    console.log(calendar);
 
     if (!calendar) {
       return null;
@@ -439,23 +440,20 @@ export async function getDashboardStats() {
     const totalPRs =
       prs.total_count;
 
-    // TODO: Replace with database count after repository table is created
-    // const totalRepos = await prisma.repository.count({
-    //   where: {
-    //     userId: session.user.id,
-    //   },
-    // });
+    const totalRepos =
+      (user.public_repos || 0) +
+      (user.total_private_repos || 0);
 
-    const totalRepos = 30;
 
-    // TODO: Replace with database count after review table is created
-    // const totalReviews = await prisma.review.count({
-    //   where: {
-    //     userId: session.user.id,
-    //   },
-    // });
 
-    const totalReviews = 44;
+    const totalReviews =
+      await prisma.review.count({
+        where: {
+          repository: {
+            userId: session.user.id,
+          },
+        },
+      });
 
     return {
       totalCommits,
@@ -554,7 +552,7 @@ export async function getMonthlyActivity() {
 
       const monthKey =
         monthNames[
-          date.getMonth()
+        date.getMonth()
         ];
 
       monthlyData[monthKey] = {
@@ -586,12 +584,12 @@ export async function getMonthlyActivity() {
 
             const monthKey =
               monthNames[
-                date.getMonth()
+              date.getMonth()
               ];
 
             if (
               monthlyData[
-                monthKey
+              monthKey
               ]
             ) {
               monthlyData[
@@ -610,17 +608,16 @@ export async function getMonthlyActivity() {
 
     sixMonthsAgo.setMonth(
       sixMonthsAgo.getMonth() -
-        6
+      6
     );
 
     const { data: prs } =
       await octokit.rest.search.issuesAndPullRequests(
         {
-          q: `author:${user.login} type:pr created:>${
-            sixMonthsAgo
-              .toISOString()
-              .split("T")[0]
-          }`,
+          q: `author:${user.login} type:pr created:>${sixMonthsAgo
+            .toISOString()
+            .split("T")[0]
+            }`,
           per_page: 100,
         }
       );
@@ -636,12 +633,12 @@ export async function getMonthlyActivity() {
 
         const monthKey =
           monthNames[
-            date.getMonth()
+          date.getMonth()
           ];
 
         if (
           monthlyData[
-            monthKey
+          monthKey
           ]
         ) {
           monthlyData[
@@ -665,7 +662,7 @@ export async function getMonthlyActivity() {
           const randomDaysAgo =
             Math.floor(
               Math.random() *
-                180
+              180
             );
 
           const reviewDate =
@@ -673,7 +670,7 @@ export async function getMonthlyActivity() {
 
           reviewDate.setDate(
             reviewDate.getDate() -
-              randomDaysAgo
+            randomDaysAgo
           );
 
           sampleReviews.push(
@@ -694,12 +691,12 @@ export async function getMonthlyActivity() {
       (review) => {
         const monthKey =
           monthNames[
-            review.createdAt.getMonth()
+          review.createdAt.getMonth()
           ];
 
         if (
           monthlyData[
-            monthKey
+          monthKey
           ]
         ) {
           monthlyData[

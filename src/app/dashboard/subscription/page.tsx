@@ -526,7 +526,7 @@ export default function SubscriptionPage() {
 
             <div className="pt-4">
               <span className="text-4xl font-bold">
-                $9.99
+                $99.99
               </span>
 
               <span className="text-muted-foreground">

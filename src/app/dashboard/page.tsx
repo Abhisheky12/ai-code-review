@@ -82,7 +82,7 @@ const {
       icon: GitBranch,
     },
     {
-      title: "Total Commits",
+      title: "Total contributions",
       value: stats?.totalCommits || 0,
       description: "In the last year",
       icon: GitCommit,
